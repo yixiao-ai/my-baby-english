@@ -3,98 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BabyEnglish - 亲子英语随身记</title>
+    <title>BabyTalk - 智能亲子英语</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 针对 PWA 的沉浸式优化 */
-        body { -webkit-tap-highlight-color: transparent; }
+        body { -webkit-tap-highlight-color: transparent; font-family: -apple-system, sans-serif; }
         .active-tab { border-bottom: 3px solid #6366f1; color: #6366f1; }
+        .loading { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 </head>
-<body class="bg-slate-50 font-sans">
+<body class="bg-slate-50">
 
     <header class="bg-white shadow-sm sticky top-0 z-10 px-4 py-3 flex justify-between items-center">
         <h1 class="text-xl font-bold text-indigo-600">BabyTalk AI</h1>
-        <div class="flex space-x-2">
-            <button class="text-xs bg-gray-100 px-2 py-1 rounded border">🇺🇸 美音</button>
-            <button class="text-xs bg-gray-100 px-2 py-1 rounded border">🇬🇧 英音</button>
-        </div>
+        <select id="voice-select" class="text-xs bg-gray-100 px-2 py-1 rounded border">
+            <option value="en-US">🇺🇸 美式发音</option>
+            <option value="en-GB">🇬🇧 英式发音</option>
+        </select>
     </header>
 
     <main class="pb-24">
-        
         <section id="learn-section" class="p-4">
-            <h2 class="text-lg font-semibold mb-3">今日学习打卡</h2>
-            <div class="space-y-4">
-                <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="text-sm font-medium text-gray-500">场景：晨起洗漱</span>
-                        <span class="text-xs bg-green-100 text-green-600 px-2 py-0.5 rounded-full">已打卡</span>
+            <h2 class="text-lg font-semibold mb-3">场景打卡</h2>
+            <div class="space-y-3">
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center" onclick="speak('Good morning, sunshine! Did you sleep well?')">
+                    <div>
+                        <p class="text-gray-800 font-medium">Good morning, sunshine!</p>
+                        <p class="text-sm text-gray-400">早安，小太阳！睡得好吗？</p>
                     </div>
-                    <div class="flex items-center justify-between p-2 hover:bg-indigo-50 rounded-lg cursor-pointer" onclick="playAudio('Time to wash your face!')">
-                        <div>
-                            <p class="text-gray-800 font-medium">Time to wash your face!</p>
-                            <p class="text-sm text-gray-400">该洗脸啦！</p>
-                        </div>
-                        <span class="text-xl">🔊</span>
-                    </div>
+                    <span class="text-xl">🔊</span>
                 </div>
             </div>
         </section>
 
         <section id="ai-section" class="p-4 hidden">
-            <div class="bg-indigo-600 rounded-2xl p-6 text-white mb-6">
-                <h2 class="text-lg font-bold mb-2">AI 场景助手</h2>
-                <p class="text-sm opacity-80">输入你现在的状况，AI 为你生成地道表达</p>
-                <textarea class="w-full mt-4 p-3 rounded-xl text-gray-800 focus:outline-none" rows="3" placeholder="例如：宝宝不肯穿袜子，想哄哄他..."></textarea>
-                <button class="w-full mt-3 bg-white text-indigo-600 font-bold py-3 rounded-xl shadow-lg active:scale-95 transition">立即生成 5 句</button>
+            <div class="bg-indigo-600 rounded-2xl p-5 text-white mb-6 shadow-lg">
+                <h2 class="text-lg font-bold mb-1">AI 场景助手</h2>
+                <p class="text-xs opacity-80">输入中文，生成5句地道亲子口语</p>
+                <textarea id="user-input" class="w-full mt-3 p-3 rounded-xl text-gray-800 focus:outline-none" rows="3" placeholder="例如：宝宝不肯穿鞋子..."></textarea>
+                <button id="gen-btn" onclick="generateEnglish()" class="w-full mt-3 bg-yellow-400 text-indigo-900 font-bold py-3 rounded-xl shadow-md active:scale-95 transition">立即生成 5 句</button>
             </div>
 
             <div id="ai-results" class="space-y-3">
-                <div class="bg-white p-4 rounded-xl border-l-4 border-indigo-400 shadow-sm flex justify-between items-center" onclick="playAudio('Let's play with the socks!')">
-                    <p class="text-gray-700">1. Let's play with the socks!</p>
-                    <button class="text-indigo-500 text-sm">发音</button>
                 </div>
-            </div>
         </section>
-
     </main>
 
     <nav class="fixed bottom-0 left-0 right-0 bg-white border-t flex justify-around py-3 shadow-2xl">
         <button onclick="switchTab('learn')" id="tab-learn" class="flex flex-col items-center active-tab">
-            <span class="text-xs">学习库</span>
+            <span class="text-sm font-medium">学习库</span>
         </button>
         <button onclick="switchTab('ai')" id="tab-ai" class="flex flex-col items-center text-gray-400">
-            <span class="text-xs">AI 助手</span>
+            <span class="text-sm font-medium">AI 助手</span>
         </button>
     </nav>
 
     <script>
-        // 简单的标签页切换逻辑
-        function switchTab(type) {
-            const learnSec = document.getElementById('learn-section');
-            const aiSec = document.getElementById('ai-section');
-            const tabLearn = document.getElementById('tab-learn');
-            const tabAi = document.getElementById('tab-ai');
+        // --- 请在这里填入你的 API KEY ---
+        const MY_KEY = "sk-2c35c979013041c1a74138d6c96ae3cd这里填你的KEY"; 
+        // ------------------------------
 
-            if (type === 'learn') {
-                learnSec.classList.remove('hidden');
-                aiSec.classList.add('hidden');
-                tabLearn.classList.add('active-tab');
-                tabAi.classList.remove('active-tab');
-            } else {
-                aiSec.classList.remove('hidden');
-                learnSec.classList.add('hidden');
-                tabAi.classList.add('active-tab');
-                tabLearn.classList.remove('active-tab');
-            }
+        function switchTab(type) {
+            document.getElementById('learn-section').classList.toggle('hidden', type !== 'learn');
+            document.getElementById('ai-section').classList.toggle('hidden', type !== 'ai');
+            document.getElementById('tab-learn').classList.toggle('active-tab', type === 'learn');
+            document.getElementById('tab-ai').classList.toggle('active-tab', type === 'ai');
         }
 
-        // 核心功能：单句发音 (Web Speech API)
-        function playAudio(text) {
+        function speak(text) {
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'en-US'; // 默认美音
+            utterance.lang = document.getElementById('voice-select').value;
+            utterance.rate = 0.9; // 稍微慢一点点，方便新手听清
             window.speechSynthesis.speak(utterance);
+        }
+
+        async function generateEnglish() {
+            const input = document.getElementById('user-input').value;
+            const btn = document.getElementById('gen-btn');
+            const resultArea = document.getElementById('ai-results');
+
+            if (!input) return alert("请输入场景说明哦！");
+            if (MY_KEY.includes("这里填")) return alert("请先在代码里填入你的 API Key！");
+
+            // 显示加载状态
+            btn.disabled = true;
+            btn.innerText = "AI 正在思考中...";
+            resultArea.innerHTML = '<div class="text-center text-gray-400 loading">AI 正在为你准备地道表达...</div>';
+
+            try {
+                const response = await fetch("https://api.deepseek.com/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${MY_KEY}`
+                    },
+                    body: JSON.stringify({
+                        model: "deepseek-chat",
+                        messages: [
+                            { role: "system", content: "你是一位精通育儿英语的专家。请根据用户的场景，提供5句简单、自然、地道的亲子口语。每句一行，格式为：英文|中文。不要说废话。" },
+                            { role: "user", content: input }
+                        ]
+                    })
+                });
+
+                const data = await response.json();
+                const content = data.choices[0].message.content;
+                const lines = content.split('\n').filter(l => l.includes('|'));
+
+                resultArea.innerHTML = ""; // 清空加载状态
+                lines.forEach(line => {
+                    const [en, cn] = line.split('|');
+                    const card = document.createElement('div');
+                    card.className = "bg-white p-4 rounded-xl border-l-4 border-indigo-400 shadow-sm flex justify-between items-center active:bg-indigo-50";
+                    card.onclick = () => speak(en);
+                    card.innerHTML = `<div><p class="text-gray-800 font-medium">${en.trim()}</p><p class="text-xs text-gray-400">${cn.trim()}</p></div><span class="text-lg">🔊</span>`;
+                    resultArea.appendChild(card);
+                });
+
+            } catch (error) {
+                alert("出错啦，请检查网络或 Key 是否正确！");
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "立即生成 5 句";
+            }
         }
     </script>
 </body>
